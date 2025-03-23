@@ -35,7 +35,7 @@ contract LattePool is ReentrancyGuard {
   ) external nonReentrant {
     if (block.timestamp > deadline) revert Expired();
 
-    bytes32 message = keccak256(
+    bytes32 rawMessage = keccak256(
       abi.encodePacked(
         msg.sender,
         amount,
@@ -43,14 +43,15 @@ contract LattePool is ReentrancyGuard {
         deadline,
         address(this)
       )
-    ).toEthSignedMessageHash();
-    if (usedMessages[message]) revert MessageUsed();
-    if (message.recover(sig) != sequencer) revert InvalidSignature();
+    );
+
+    if (usedMessages[rawMessage]) revert MessageUsed();
+    if (!verifySignature(sequencer, rawMessage, sig)) revert InvalidSignature();
 
     if (debtBalance[msg.sender] + amount > maxDebtAllowed) revert();
     if (address(this).balance < amount) revert InsufficientLiquidity();
 
-    usedMessages[message] = true;
+    usedMessages[rawMessage] = true;
     debtBalance[msg.sender] += amount;
     payable(msg.sender).transfer(amount);
 
@@ -66,15 +67,16 @@ contract LattePool is ReentrancyGuard {
     if (block.timestamp > deadline) revert Expired();
     if (msg.value != amount) revert();
 
-    bytes32 message = keccak256(
+    bytes32 rawMessage = keccak256(
       abi.encodePacked(msg.sender, amount, currentDebt, deadline, address(this))
-    ).toEthSignedMessageHash();
-    if (usedMessages[message]) revert MessageUsed();
-    if (message.recover(sig) != sequencer) revert InvalidSignature();
+    );
+
+    if (usedMessages[rawMessage]) revert MessageUsed();
+    if (!verifySignature(sequencer, rawMessage, sig)) revert InvalidSignature();
 
     if (amount > currentDebt) revert RepayTooMuch();
 
-    usedMessages[message] = true;
+    usedMessages[rawMessage] = true;
     debtBalance[msg.sender] -= amount;
 
     emit Repaid(msg.sender, amount);

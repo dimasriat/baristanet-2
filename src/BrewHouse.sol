@@ -45,16 +45,17 @@ contract BrewHouse is ReentrancyGuard {
     bytes calldata sig
   ) external nonReentrant {
     require(block.timestamp <= deadline, "Expired");
+
     bytes32 rawMessage = keccak256(
       abi.encodePacked(msg.sender, amount, deadline, address(this))
-    ).toEthSignedMessageHash();
+    );
 
-    if (usedMessages[message]) revert MessageUsed();
-    if (message.recover(sig) != sequencer) revert InvalidSignature();
+    if (usedMessages[rawMessage]) revert MessageUsed();
+    if (!verifySignature(sequencer, rawMessage, sig)) revert InvalidSignature();
 
     if (collateralBalance[msg.sender] < amount) revert InsufficientCollateral();
 
-    usedMessages[message] = true;
+    usedMessages[rawMessage] = true;
     collateralBalance[msg.sender] -= amount;
     weth.withdraw(amount);
     payable(msg.sender).transfer(amount);
