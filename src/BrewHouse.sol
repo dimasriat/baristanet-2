@@ -47,7 +47,7 @@ contract BrewHouse is ReentrancyGuard {
     require(block.timestamp <= deadline, "Expired");
     bytes32 rawMessage = keccak256(
       abi.encodePacked(msg.sender, amount, deadline, address(this))
-    );
+    ).toEthSignedMessageHash();
 
     if (usedMessages[message]) revert MessageUsed();
     if (message.recover(sig) != sequencer) revert InvalidSignature();
