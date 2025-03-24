@@ -1,11 +1,15 @@
 {
   "name": "contracts",
   "scripts": {
+    "signature": "node js-scripts/signature.js",
     "build": "forge build",
     "test": "forge test",
     "format": "prettier --write ."
   },
   "devDependencies": {
     "prettier-plugin-solidity": "^1.3.1"
+  },
+  "dependencies": {
+    "ethers": "^5.8.0"
   }
 }
